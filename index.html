@@ -339,26 +339,26 @@
     }
 
     /* ===== Botón flotante Instagram ===== */
-    .floating-instagram {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      z-index: 60;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: var(--primary);
-      color: #ffffff;
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      box-shadow: var(--shadow-soft);
-      border: none;
-      cursor: pointer;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
-    }
+.floating-instagram {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right, 12px));
+  bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-soft);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
 
     .floating-instagram:hover {
       background: var(--primary-dark);
@@ -386,15 +386,17 @@
       white-space: nowrap;
     }
 
-    @media (max-width: 480px) {
-      .floating-instagram {
-        padding: 10px;
-      }
+@media (max-width: 768px) {
+  .floating-instagram {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px)); /* sube el botón para que no lo tape la barra del navegador */
+    right: max(10px, env(safe-area-inset-right, 10px));
+  }
 
-      .floating-instagram__label {
-        display: none; /* en mobile queda solo el ícono, menos invasivo */
-      }
-    }
+  .floating-instagram__label {
+    display: none; /* en mobile queda solo el ícono, más limpio */
+  }
+}
+
   </style>
 </head>
 <body>
