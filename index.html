@@ -806,8 +806,9 @@ function mostrarDeadlineBanner(fechaStr) {
   }
  // Asociar acción al botón
   document.getElementById("addReminderBtn").onclick = () => {
-    generarICS(fechaStr);
-  };
+  abrirGoogleCalendar(fechaStr);
+};
+
 }
 
 function ocultarDeadlineBanner() {
@@ -861,39 +862,31 @@ document.getElementById('remForm').addEventListener('submit', async (e) => {
   }
 });
 
-function generarICS(fechaStr) {
+
+
+
+function abrirGoogleCalendar(fechaStr) {
+  // fechaStr viene en formato DD/MM/AAAA
   let [dia, mes, anio] = fechaStr.split("/").map(Number);
 
-  // Calendarios usan formato AAAAMMDD
-  const fechaISO = `${anio}${String(mes).padStart(2,"0")}${String(dia).padStart(2,"0")}`;
+  // Armar fecha al formato que pide Google Calendar
+  const fechaBase = `${anio}${String(mes).padStart(2,"0")}${String(dia).padStart(2,"0")}`;
 
-  const contenidoICS =
-`BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-SUMMARY:Cierre de pedidos de remeras
-DTSTART:${fechaISO}T090000
-DTEND:${fechaISO}T093000
-DESCRIPTION:Último día para cargar los pedidos de remeras.
-BEGIN:VALARM
-TRIGGER:-P1D
-DESCRIPTION:Recordatorio del cierre
-ACTION:DISPLAY
-END:VALARM
-END:VEVENT
-END:VCALENDAR`;
+  // Evento desde 09:00 a 09:30
+  const start = `${fechaBase}T090000`;
+  const end   = `${fechaBase}T093000`;
 
-  const blob = new Blob([contenidoICS], { type: "text/calendar" });
-  const url = URL.createObjectURL(blob);
+  const titulo = encodeURIComponent("Cierre de pedidos de remeras");
+  const descripcion = encodeURIComponent("Recordatorio: último día para completar el pedido de remeras del cole.");
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "recordatorio_remeras.ics";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const url =
+    `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+    `&text=${titulo}` +
+    `&dates=${start}/${end}` +
+    `&details=${descripcion}`;
 
-  URL.revokeObjectURL(url);
+  // Abrir Google Calendar directamente
+  window.open(url, "_blank");
 }
 
 </script>
