@@ -404,6 +404,34 @@
 </head>
 <body>
   <main class="page">
+<div id="deadlineBanner" style="
+  display:none;
+  background:#ffe083;
+  padding:10px 16px;
+  margin-bottom:12px;
+  border-radius:12px;
+  font-weight:600;
+  color:#7c2d12;
+  text-align:center;
+  font-size:0.95rem;
+  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+">
+  <span id="deadlineText"></span><br>
+  <button id="addReminderBtn" style="
+    margin-top:8px;
+    background:#ff7fa3;
+    color:white;
+    border:none;
+    padding:8px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:0.85rem;
+    font-weight:600;
+  ">
+    Guardar recordatorio 📅
+  </button>
+</div>
+
     <div class="blob blob--pink"></div>
     <div class="blob blob--blue"></div>
 
@@ -553,193 +581,322 @@
   </a>
 
   <script>
-    // ====== CONFIG TALLE → IMAGEN ======
-    const sizeData = {
-      "4":  { img: "img/talles/talle-4.jpeg",  desc: "Talle 4: pensado para nivel inicial / primer ciclo." },
-      "6":  { img: "img/talles/talle-6.jpeg",  desc: "Talle 6: ideal para chicos/as de aprox. 6–7 años." },
-      "8":  { img: "img/talles/talle-8.jpeg",  desc: "Talle 8: referencia para 8–9 años según contextura." },
-      "10": { img: "img/talles/talle-10.jpeg", desc: "Talle 10: suele usarse en 4.º / 5.º grado." },
-      "12": { img: "img/talles/talle-12.jpeg", desc: "Talle 12: orientado a preadolescentes." },
-      "14":  { img: "img/talles/talle-14.jpeg",  desc: "Talle 14: equivalente a un pequeño de adulto." },
-      "16":  { img: "img/talles/talle-16.jpeg",  desc: "Talle 16: adulto medio." },
-    };
+/* ====== CONFIG TALLE → IMAGEN ====== */
+const sizeData = {
+  "4":  { img: "img/talles/talle-4.jpeg",  desc: "Talle 4: pensado para nivel inicial / primer ciclo." },
+  "6":  { img: "img/talles/talle-6.jpeg",  desc: "Talle 6: ideal para chicos/as de aprox. 6–7 años." },
+  "8":  { img: "img/talles/talle-8.jpeg",  desc: "Talle 8: referencia para 8–9 años según contextura." },
+  "10": { img: "img/talles/talle-10.jpeg", desc: "Talle 10: suele usarse en 4.º / 5.º grado." },
+  "12": { img: "img/talles/talle-12.jpeg", desc: "Talle 12: orientado a preadolescentes." },
+  "14": { img: "img/talles/talle-14.jpeg", desc: "Talle 14: equivalente a un pequeño de adulto." },
+  "16": { img: "img/talles/talle-16.jpeg", desc: "Talle 16: adulto medio." },
+};
 
-    const selectTalle = document.getElementById('talle');
-    const imgEl = document.getElementById('sizeImage');
-    const noSizeText = document.getElementById('noSizeText');
-    const captionEl = document.getElementById('sizeCaption');
+const selectTalle = document.getElementById('talle');
+const imgEl = document.getElementById('sizeImage');
+const noSizeText = document.getElementById('noSizeText');
+const captionEl = document.getElementById('sizeCaption');
 
-    selectTalle.addEventListener('change', () => {
-      const value = selectTalle.value;
-      const data = sizeData[value];
-
-      if (data) {
-        imgEl.src = data.img;
-        imgEl.alt = "Medidas de la remera – talle " + value;
-        imgEl.style.display = "block";
-        if (noSizeText) noSizeText.style.display = "none";
-        captionEl.textContent = data.desc;
-      }
-    });
-
-    // ====== NUEVO: combos encadenados desde Google Sheets ======
-    const colegioSelect = document.getElementById('colegio');
-    const salaSelect    = document.getElementById('sala');
-    const senoSelect    = document.getElementById('seno');
-    const disenoSelect  = document.getElementById('diseno');
-
-    let catalogData = []; // se llena desde Sheets
-
-    const ENDPOINT = "https://script.google.com/macros/s/AKfycbzw7Wudea7sTP4bWVImwLrzVcU9a2QR-t_yhONdMGdZjebgBhrpDhcXiLBeqbT8HgcQ/exec";
-
-    function unique(arr) {
-      return [...new Set(arr.filter(v => v && v !== ""))];
-    }
-
-    function resetSelect(select, placeholderText, disabled = true) {
-      select.innerHTML = "";
-      const opt = document.createElement("option");
-      opt.disabled = true;
-      opt.selected = true;
-      opt.value = "";
-      opt.textContent = placeholderText;
-      select.appendChild(opt);
-      select.disabled = disabled;
-    }
-
-    function populateSelect(select, options, placeholderText) {
-      resetSelect(select, placeholderText, false);
-      options.forEach(value => {
-        const opt = document.createElement("option");
-        opt.value = value;
-        opt.textContent = value;
-        select.appendChild(opt);
-      });
-    }
-
-    async function loadCatalog() {
-      try {
-        const res = await fetch(ENDPOINT + "?mode=catalog");
-        const json = await res.json();
-        catalogData = json.data || [];
-
-        // llenar colegios
-        const colegios = unique(catalogData.map(r => r.colegio));
-        populateSelect(colegioSelect, colegios, "Seleccioná un colegio…");
-      } catch (err) {
-        console.error("Error cargando catálogo:", err);
-        // si falla, dejamos los combos como están y no rompemos nada
-      }
-    }
-
-    colegioSelect.addEventListener("change", () => {
-      const col = colegioSelect.value;
-      const filtered = catalogData.filter(r => r.colegio === col);
-
-      const salas = unique(filtered.map(r => r.sala));
-      populateSelect(salaSelect, salas, "Seleccioná una sala…");
-
-      resetSelect(senoSelect, "Seleccioná primero sala…");
-      resetSelect(disenoSelect, "Seleccioná primero seño…");
-    });
-
-    salaSelect.addEventListener("change", () => {
-      const col = colegioSelect.value;
-      const sala = salaSelect.value;
-
-      const filtered = catalogData.filter(r => r.colegio === col && r.sala === sala);
-
-      const senos = unique(filtered.map(r => r.seno));
-      populateSelect(senoSelect, senos, "Seleccioná la seño…");
-
-      resetSelect(disenoSelect, "Seleccioná primero seño…");
-    });
-
-    senoSelect.addEventListener("change", () => {
-      const col = colegioSelect.value;
-      const sala = salaSelect.value;
-      const seno = senoSelect.value;
-
-      const filtered = catalogData.filter(r =>
-        r.colegio === col &&
-        r.sala === sala &&
-        r.seno === seno
-      );
-
-      const disenos = unique(filtered.map(r => r.diseno));
-      populateSelect(disenoSelect, disenos, "Seleccioná el diseño…");
-    });
-
-    // Cargamos catálogo al inicio
-    loadCatalog();
-
-    // ====== Envío a Google Apps Script (Google Sheets) ======
-    document.getElementById('remForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const colegio = colegioSelect.value;
-      const sala    = salaSelect.value;
-      const seno    = senoSelect.value;
-      const diseno  = disenoSelect.value;
-
-      const nombre   = document.getElementById('nombre').value.trim();
-      const apellido = document.getElementById('apellido').value.trim();
-      const celular  = document.getElementById('celular').value.trim();
-      const talle    = document.getElementById('talle').value;
-
-      if (!talle) {
-        alert("Seleccioná un talle antes de confirmar.");
-        return;
-      }
-
-      const data = {
-        colegio,
-        sala,
-        seno,
-        diseno,
-        nombre,
-        apellido,
-        celular,
-        talle
-      };
-
-      try {
-        const res = await fetch(ENDPOINT, {
-          method: "POST",
-          body: JSON.stringify(data)
-        });
-
-        if (res.ok) {
-          alert("¡Datos registrados correctamente! 💕 En breve te vamos a contactar para seguir con el pedido.");
-          e.target.reset();
-          // reset combos dependientes
-          resetSelect(salaSelect, "Seleccioná primero un colegio…");
-          resetSelect(senoSelect, "Seleccioná primero sala…");
-          resetSelect(disenoSelect, "Seleccioná primero seño…");
-          // reseteamos talle preview
-          if (noSizeText) noSizeText.style.display = "block";
-          imgEl.style.display = "none";
-          captionEl.textContent = "Acá vas a ver las medidas en centímetros del talle que seleccionaste.";
-        } else {
-          alert("Hubo un error al guardar los datos. Probá de nuevo más tarde.");
-        }
-      } catch (err) {
-        console.error(err);
-        alert("No se pudo conectar con el servidor. Revisá la conexión o intentá más tarde.");
-      }
-    });
-
-// Botón externo que dispara el submit del formulario
-const remForm = document.getElementById('remForm');
-const submitBtn = document.getElementById('submitBtn');
-
-submitBtn.addEventListener('click', () => {
-  if (remForm) {
-    // respeta validaciones HTML5 y el listener de submit que ya tenés
-    remForm.requestSubmit();
+selectTalle.addEventListener('change', () => {
+  const value = selectTalle.value;
+  const data = sizeData[value];
+  if (data) {
+    imgEl.src = data.img;
+    imgEl.alt = "Medidas de la remera – talle " + value;
+    imgEl.style.display = "block";
+    noSizeText.style.display = "none";
+    captionEl.textContent = data.desc;
   }
 });
 
-  </script>
+/* ====== SELECTS DINÁMICOS ====== */
+const colegioSelect = document.getElementById('colegio');
+const salaSelect    = document.getElementById('sala');
+const senoSelect    = document.getElementById('seno');
+const disenoSelect  = document.getElementById('diseno');
+
+let catalogData = [];
+
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyb68XpHr_hPyuTYLHhpDX0_DaKVH3FrzVJnf_BU1wR8q3vD9vhT9HWYxM_sGUgB-onig/exec";
+
+function unique(arr) {
+  return [...new Set(arr.filter(v => v && v !== ""))];
+}
+
+function resetSelect(select, placeholderText, disabled = true) {
+  select.innerHTML = "";
+  const opt = document.createElement("option");
+  opt.disabled = true;
+  opt.selected = true;
+  opt.value = "";
+  opt.textContent = placeholderText;
+  select.appendChild(opt);
+  select.disabled = disabled;
+}
+
+function populateSelect(select, options, placeholderText) {
+  resetSelect(select, placeholderText, false);
+  options.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
+}
+
+async function loadCatalog() {
+  try {
+    const res = await fetch(ENDPOINT + "?mode=catalog");
+    const json = await res.json();
+    catalogData = json.data || [];
+
+    const colegios = unique(catalogData.map(r => r.colegio));
+    populateSelect(colegioSelect, colegios, "Seleccioná un colegio…");
+
+  } catch (err) {
+    console.error("Error cargando catálogo:", err);
+  }
+}
+
+colegioSelect.addEventListener("change", () => {
+  const col = colegioSelect.value;
+  const filtered = catalogData.filter(r => r.colegio === col);
+
+  const salas = unique(filtered.map(r => r.sala));
+  populateSelect(salaSelect, salas, "Seleccioná una sala…");
+
+  resetSelect(senoSelect, "Seleccioná primero sala…");
+  resetSelect(disenoSelect, "Seleccioná primero seño…");
+  ocultarDeadlineBanner();
+});
+
+salaSelect.addEventListener("change", () => {
+  const col = colegioSelect.value;
+  const sala = salaSelect.value;
+
+  const filtered = catalogData.filter(r => r.colegio === col && r.sala === sala);
+
+  const senos = unique(filtered.map(r => r.seno));
+  populateSelect(senoSelect, senos, "Seleccioná la seño…");
+
+  resetSelect(disenoSelect, "Seleccioná primero seño…");
+  ocultarDeadlineBanner();
+});
+
+senoSelect.addEventListener("change", () => {
+  const col = colegioSelect.value;
+  const sala = salaSelect.value;
+  const seno = senoSelect.value;
+
+  const filtered = catalogData.filter(r =>
+    r.colegio === col &&
+    r.sala === sala &&
+    r.seno === seno
+  );
+
+  const disenos = unique(filtered.map(r => r.diseno));
+  populateSelect(disenoSelect, disenos, "Seleccioná el diseño…");
+
+  ocultarDeadlineBanner();
+});
+
+/* ====== MOSTRAR FECHA SEGÚN COINCIDENCIA EXACTA ====== */
+disenoSelect.addEventListener("change", () => {
+  const col = colegioSelect.value;
+  const sala = salaSelect.value;
+  const seno = senoSelect.value;
+  const diseno = disenoSelect.value;
+
+  const fila = catalogData.find(r =>
+    r.colegio === col &&
+    r.sala === sala &&
+    r.seno === seno &&
+    r.diseno === diseno
+  );
+
+  if (!fila || !fila.fecha_limite || fila.fecha_limite.trim() === "") {
+    ocultarDeadlineBanner();
+    return;
+  }
+
+  mostrarDeadlineBanner(fila.fecha_limite.trim());
+});
+
+loadCatalog();
+
+/* ====== FECHA LIMITE ====== */
+function crearFechaSeguro(fechaStr) {
+  // Si viene en DD/MM/AAAA
+  if (fechaStr.includes("/")) {
+    const [dia, mes, anio] = fechaStr.split("/").map(Number);
+    return new Date(anio, mes - 1, dia, 23, 59, 59);
+  }
+
+  // Si viene en formato AAAA-MM-DD
+  const [anio, mes, dia] = fechaStr.split("-").map(Number);
+  return new Date(anio, mes - 1, dia, 23, 59, 59);
+}
+
+
+
+
+
+
+
+function parseFechaFlexible(fechaStr) {
+  // 1) Si viene como objeto Date del servidor → convertirlo a string
+  if (fechaStr instanceof Date) {
+    return new Date(
+      fechaStr.getFullYear(),
+      fechaStr.getMonth(),
+      fechaStr.getDate(),
+      23, 59, 59
+    );
+  }
+
+  // 2) Si ya viene como ISO (AAAA-MM-DD o ISO completo)
+  if (fechaStr.includes("-")) {
+    const d = new Date(fechaStr);
+    return new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      23, 59, 59
+    );
+  }
+
+  // 3) Si viene como DD/MM/AAAA
+  if (fechaStr.includes("/")) {
+    const [dia, mes, anio] = fechaStr.split("/").map(Number);
+    return new Date(anio, mes - 1, dia, 23, 59, 59);
+  }
+
+  // 4) Último recurso → intentar parse automático y ajustarlo a local
+  const fallback = new Date(fechaStr);
+  return new Date(
+    fallback.getFullYear(),
+    fallback.getMonth(),
+    fallback.getDate(),
+    23, 59, 59
+  );
+}
+
+
+
+function mostrarDeadlineBanner(fechaStr) {
+  const banner = document.getElementById("deadlineBanner");
+  const text = document.getElementById("deadlineText");
+
+  const fechaLim = parseFechaFlexible(fechaStr);
+
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+
+  const diffMs = fechaLim - hoy;
+  const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  banner.style.display = "block";
+
+  if (diffDias > 0) {
+    text.textContent = `¡Quedan ${diffDias} días para completar el pedido!`;
+  } else if (diffDias === 0) {
+    text.textContent = "¡Hoy es el último día para completar el pedido!";
+  } else {
+    text.textContent = "El período para completar pedidos ya finalizó.";
+  }
+ // Asociar acción al botón
+  document.getElementById("addReminderBtn").onclick = () => {
+    generarICS(fechaStr);
+  };
+}
+
+function ocultarDeadlineBanner() {
+  document.getElementById("deadlineBanner").style.display = "none";
+}
+
+/* ====== SUBMIT DEL FORM ====== */
+const remForm = document.getElementById('remForm');
+const submitBtn = document.getElementById('submitBtn');
+
+submitBtn.addEventListener('click', () => remForm.requestSubmit());
+
+document.getElementById('remForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const data = {
+    colegio: colegioSelect.value,
+    sala: salaSelect.value,
+    seno: senoSelect.value,
+    diseno: disenoSelect.value,
+    nombre: document.getElementById('nombre').value.trim(),
+    apellido: document.getElementById('apellido').value.trim(),
+    celular: document.getElementById('celular').value.trim(),
+    talle: document.getElementById('talle').value
+  };
+
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert("¡Datos registrados correctamente! 💕 En breve te vamos a contactar.");
+      e.target.reset();
+      resetSelect(salaSelect, "Seleccioná primero un colegio…");
+      resetSelect(senoSelect, "Seleccioná primero sala…");
+      resetSelect(disenoSelect, "Seleccioná primero seño…");
+
+      noSizeText.style.display = "block";
+      imgEl.style.display = "none";
+      captionEl.textContent = "Acá vas a ver las medidas en centímetros del talle que seleccionaste.";
+
+      ocultarDeadlineBanner();
+    } else {
+      alert("Hubo un error al guardar los datos.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("No se pudo conectar con el servidor.");
+  }
+});
+
+function generarICS(fechaStr) {
+  let [dia, mes, anio] = fechaStr.split("/").map(Number);
+
+  // Calendarios usan formato AAAAMMDD
+  const fechaISO = `${anio}${String(mes).padStart(2,"0")}${String(dia).padStart(2,"0")}`;
+
+  const contenidoICS =
+`BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+SUMMARY:Cierre de pedidos de remeras
+DTSTART:${fechaISO}T090000
+DTEND:${fechaISO}T093000
+DESCRIPTION:Último día para cargar los pedidos de remeras.
+BEGIN:VALARM
+TRIGGER:-P1D
+DESCRIPTION:Recordatorio del cierre
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+  const blob = new Blob([contenidoICS], { type: "text/calendar" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "recordatorio_remeras.ics";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+</script>
+
 </body>
 </html>
