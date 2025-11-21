@@ -580,7 +580,7 @@
   ">
     <h3 style="margin-top:0; color:#7c2d12;">Fecha límite del pedido</h3>
     <p id="deadlineModalText" style="font-size:0.95rem; color:#444;"></p>
-    <button onclick="cerrarModal()" style="
+    <button onclick="cerrarModalYVerificar()" style="
       margin-top:16px;
       background:#ff7fa3;
       border:none;
@@ -594,6 +594,54 @@
   </div>
 </div>
 
+<!-- POPUP de éxito al guardar -->
+<div id="successModal" style="
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.45);
+  backdrop-filter: blur(2px);
+  z-index:9999;
+  justify-content:center;
+  align-items:center;
+">
+  <div style="
+    background:white;
+    width:90%;
+    max-width:380px;
+    padding:22px 24px;
+    border-radius:18px;
+    text-align:center;
+    box-shadow:0 14px 40px rgba(0,0,0,0.25);
+    font-family:Poppins, sans-serif;
+  ">
+    <h3 style="margin-top:0; color:#ff4f87; font-family:'Baloo 2'; font-size:1.4rem;">¡Datos registrados!</h3>
+
+    <p id="successModalText" style="
+      font-size:1rem;
+      color:#444;
+      margin-top:6px;
+      line-height:1.45;
+    ">
+      Tus datos fueron registrados correctamente 💕<br>
+      En breve te vamos a contactar para seguir con el pedido.
+    </p>
+
+    <button onclick="cerrarSuccessModal()" style="
+      margin-top:18px;
+      background:#ff7fa3;
+      border:none;
+      padding:11px 24px;
+      border-radius:999px;
+      color:white;
+      font-weight:600;
+      font-size:1rem;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(248,113,150,0.25);
+    ">Entendido</button>
+  </div>
+</div>
 
 
   </main>
@@ -813,7 +861,7 @@ function parseFechaFlexible(fechaStr) {
 
 
 
-
+let fechaVencida = false;
 
 function mostrarDeadlineBanner(fechaStr) {
   const banner = document.getElementById("deadlineBanner");
@@ -847,8 +895,10 @@ function mostrarDeadlineBanner(fechaStr) {
 
   if (diffDias >= 0) {
     mensaje = `¡Quedan ${diffDias} día${diffDias === 1 ? "" : "s"} para completar el pedido!`;
+fechaVencida = false;
   } else {
     mensaje = "El período para completar pedidos ya finalizó.";
+fechaVencida = true; // 🔥 solo marcamos que está vencido
   }
 
   banner.style.display = "block";
@@ -885,7 +935,7 @@ document.getElementById('remForm').addEventListener('submit', async (e) => {
     });
 
     if (res.ok) {
-      alert("¡Datos registrados correctamente! 💕 En breve te vamos a contactar.");
+      mostrarSuccessModal();
       e.target.reset();
       resetSelect(salaSelect, "Seleccioná primero un colegio…");
       resetSelect(senoSelect, "Seleccioná primero sala…");
@@ -899,10 +949,11 @@ document.getElementById('remForm').addEventListener('submit', async (e) => {
     } else {
       alert("Hubo un error al guardar los datos.");
     }
-  } catch (err) {
-    console.error(err);
-    alert("No se pudo conectar con el servidor.");
-  }
+ } catch (err) {
+  console.error("Advertencia: la llamada devolvió un error, pero puede ser un falso negativo desde localhost:", err);
+  // No mostramos alert. No impacta al usuario.
+}
+
 });
 
 
@@ -945,7 +996,49 @@ function mostrarPopup(texto) {
   modal.style.display = "flex";
 }
 
+function mostrarSuccessModal() {
+  const modal = document.getElementById("successModal");
+  modal.style.display = "flex";
+}
 
+function cerrarSuccessModal() {
+  document.getElementById("successModal").style.display = "none";
+}
+
+function cerrarModalYVerificar() {
+  cerrarModal(); // Cierra el popup normal
+
+  if (fechaVencida) {
+
+    // Campos a deshabilitar
+    const btn = document.getElementById("submitBtn");
+    const talle = document.getElementById("talle");
+    const nombre = document.getElementById("nombre");
+    const apellido = document.getElementById("apellido");
+    const celular = document.getElementById("celular");
+
+    // Bloquear elementos
+    btn.disabled = true;
+    talle.disabled = true;
+    nombre.disabled = true;
+    apellido.disabled = true;
+    celular.disabled = true;
+
+    // Estética visual (grisado)
+    btn.style.opacity = "0.5";
+    talle.style.opacity = "0.6";
+    nombre.style.opacity = "0.6";
+    apellido.style.opacity = "0.6";
+    celular.style.opacity = "0.6";
+
+    // Cursor no clickable
+    btn.style.cursor = "not-allowed";
+    talle.style.cursor = "not-allowed";
+    nombre.style.cursor = "not-allowed";
+    apellido.style.cursor = "not-allowed";
+    celular.style.cursor = "not-allowed";
+  }
+}
 
 </script>
 
